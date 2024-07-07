@@ -2,20 +2,35 @@ import numpy
 # import scipy
 import time
 import random
-from multiverse import Multiverse, Display
+from multiverse import Multiverse, Display, MODE_HUB75
+import logging
+import sys
+
+DEBUG = False
+
+root = logging.getLogger()
+if DEBUG:
+    root.setLevel(logging.DEBUG)
+else:
+    root.setLevel(logging.INFO)
+
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+root.handlers.clear()
+root.addHandler(handler)
 
 display = Multiverse(
-    #       Serial Port,       W,  H,  X,  Y
-    Display("/dev/Fire-Alice", 53, 11, 18, 28),
-    Display("/dev/Fire-James", 53, 11, 18, 39),
-    Display("/dev/Fire-Susan", 53, 11, 18, 51),
+    Display("/dev/serial/by-id/usb-Pimoroni_Multiverse_E661410403177438-if00", 160, 32, 0, 0, mode=MODE_HUB75),
 )
+
 
 display.setup()
 
 # Full buffer size
-WIDTH = 90
-HEIGHT = 90
+WIDTH = 160
+HEIGHT = 32
 BYTES_PER_PIXEL = 4
 
 # Fire stuff

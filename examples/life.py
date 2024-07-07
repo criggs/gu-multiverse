@@ -3,20 +3,42 @@ import time
 import random
 import colorsys
 from multiverse import Multiverse, Display, MODE_HUB75
+import logging
+import sys
+
+DEBUG = False
+
+root = logging.getLogger()
+if DEBUG:
+    root.setLevel(logging.DEBUG)
+else:
+    root.setLevel(logging.INFO)
+
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+root.handlers.clear()
+root.addHandler(handler)
 
 display = Multiverse(
-    Display("/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614104031C5E38-if00", 192, 32, 0, 0, mode=MODE_HUB75),
-    Display("/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614864D3853334-if00", 32, 32, 32, 32),
-    Display("/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614864D333A036-if00", 32, 32, 64, 32)
+    Display("/dev/serial/by-id/usb-Pimoroni_Multiverse_E661410403177438-if00", 160, 32, 0, 0, mode=MODE_HUB75),
+    Display("/dev/serial/by-id/dummy", 256, 32, 0, 32 * 1, dummy=True, mode=MODE_HUB75),
+    Display("/dev/serial/by-id/dummy", 256, 32, 0, 32 * 2, dummy=True, mode=MODE_HUB75),
+    Display("/dev/serial/by-id/dummy", 256, 32, 0, 32 * 3, dummy=True, mode=MODE_HUB75),
+    Display("/dev/serial/by-id/dummy", 256, 32, 0, 32 * 4, dummy=True, mode=MODE_HUB75),
+    Display("/dev/serial/by-id/dummy", 256, 32, 0, 32 * 5, dummy=True, mode=MODE_HUB75),
+    Display("/dev/serial/by-id/dummy", 256, 32, 0, 32 * 6, dummy=True, mode=MODE_HUB75),
+    Display("/dev/serial/by-id/dummy", 256, 32, 0, 32 * 7, dummy=True, mode=MODE_HUB75),
 )
 
 display.setup(use_threads=True)
 
 # Full buffer size
-WIDTH = 224
-HEIGHT = 64
+WIDTH = 256
+HEIGHT = 256
 BYTES_PER_PIXEL = 4
-MAX_COLOUR = 1024 # 10 bit
+MAX_COLOUR = 256 # 10 bit
 
 INITIAL_LIFE = int(WIDTH * HEIGHT / 2)        # Number of live cells to seed
 GENERATION_TIME = 0.1     # MS between generations
@@ -30,23 +52,21 @@ HSV_OFFSET = 0.3
 
 
 def palette(offset=0.3):
-    for c in range(MAX_COLOUR):
-        yield c
-        yield 0
-        yield c // 2
-        yield 0
-    #for h in range(256):
-    #    for c in colorsys.hsv_to_rgb(offset + h / 1024.0, 1.0, h / 255.0):
-    #        yield int(c * 255)
-    #    yield 0 # padding byte
+    # for c in range(MAX_COLOUR):
+    #     yield c
+    #     yield 0
+    #     yield c // 2
+    #     yield 0
+    for h in range(256):
+       for c in colorsys.hsv_to_rgb(offset + h / 1024.0, 1.0, h / 255.0):
+           yield int(c * 255)
+       yield 0 # padding byte
 
 
 # Palette conversion, this is actually pretty nifty
 PALETTE = numpy.fromiter(palette(HSV_OFFSET), dtype=numpy.uint16).reshape((MAX_COLOUR, 4))
 
-
 life = numpy.zeros((HEIGHT, WIDTH), dtype=numpy.float32)
-
 
 # UPDATE THE FIIIIIIIIIIIIREEEEEEEEEEEEEEEEEEEEEEEEEE
 def update():
@@ -96,7 +116,7 @@ def seed_life():
 
     HSV_OFFSET = random.randint(0, 360) / 360.0
 
-    #PALETTE = numpy.fromiter(palette(HSV_OFFSET), dtype=numpy.uint8).reshape((256, 4))
+    PALETTE = numpy.fromiter(palette(HSV_OFFSET), dtype=numpy.uint8).reshape((256, 4))
 
     for _ in range(INITIAL_LIFE):
         x = random.randint(0, WIDTH - 1)

@@ -50,7 +50,7 @@ include(${DISPLAY_PATH})
 # Don't forget to link the libraries you need!
 target_link_libraries(${NAME}
     display
-
+    pico_multicore
     pico_stdlib
     pico_unique_id
     hardware_pio

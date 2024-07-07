@@ -4,6 +4,22 @@ import sys
 import math
 import numpy
 from multiverse import Multiverse, Display
+import logging
+
+DEBUG = False
+
+root = logging.getLogger()
+if DEBUG:
+    root.setLevel(logging.DEBUG)
+else:
+    root.setLevel(logging.INFO)
+
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+root.handlers.clear()
+root.addHandler(handler)
 
 display = Multiverse(
     Display("/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614104037D9F30-if00", 53, 11, 0,  0),

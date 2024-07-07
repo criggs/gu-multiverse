@@ -5,6 +5,7 @@ import threading
 import signal
 import struct
 import logging
+import time
 
 __version__ = '0.0.3'
 
@@ -51,6 +52,7 @@ class Display:
         self._port_write_lock = threading.Lock()
         self._message_queue = []
         self._buffer = None
+        self._frame_count = 0
 
     def setup(self):
         if self.dummy:
@@ -102,18 +104,29 @@ class Display:
         self._close()
         logging.debug(f"{self.x},{self.y}: Run is done")
 
+
     def _update_display(self):
+        start = time.time()
         if self._buffer is not None:
             self.write(header=b"multiverse:data", data=self._buffer)
+        self._frame_count += 1
+        if self._frame_count % 100 == 0:
+            frame_time = time.time() - start
+            print(f"Frame time: {frame_time * 1000}ms, FPS: {1/frame_time}")
 
     def write(self, header, data=None):
         if self.port is None:
             return
-        if self.dummy:
-            return
 
         # All writes to the port should be protected by this lock to prevent interleaved messages
         self._port_write_lock.acquire()
+
+        
+        if self.dummy:
+            #simulate 10ms transmission time
+            time.sleep(0.010)
+            return
+
         try:
             self.port.write(header)
             if data is not None:
@@ -194,19 +207,39 @@ class Display:
 
         # Conversion into Interstate 75's 10bit per pixel interleaved format
         if self.mode == MODE_HUB75 and self.h in (32, 64):
-            new_buffer = numpy.zeros(target.shape, dtype=numpy.uint32)
+            #new_buffer = numpy.zeros(target.shape, dtype=numpy.uint32)
 
             # Interleave upper and lower display sections
-            new_buffer[::,::2] = target[:int(self.h / 2)].reshape(self.h, int(self.w / 2), depth)
-            new_buffer[::,1::2] = target[int(self.h / 2):].reshape(self.h, int(self.w / 2), depth)
+            # new_buffer[::,::2] = target[:int(self.h / 2)].reshape(self.h, int(self.w / 2), depth)
+            # new_buffer[::,1::2] = target[int(self.h / 2):].reshape(self.h, int(self.w / 2), depth)
+
 
             # Pack into 10bit, uint32, 0b00rrrrrrrrrrggggggggggbbbbbbbbbb
-            target = (new_buffer[::,::,0] & 0x3ff) << 20 | (new_buffer[::,::,1] & 0x3ff) << 10 | (new_buffer[::,::,2] & 0x3ff)
+            # target = (new_buffer[::,::,0] & 0x3ff) << 20 | (new_buffer[::,::,1] & 0x3ff) << 10 | (new_buffer[::,::,2] & 0x3ff)
+            
+
+            # first_pixel = target[0,0]
+            # print(f'RGBX = {first_pixel}')
+            
+            # r = first_pixel[2]
+            # g = first_pixel[1]
+            # b = first_pixel[0]
+
+            # r565 = r >> 3
+            # g565 = g >> 2
+            # b565 = b >> 3
+
+            # rgb565 = ((r565) << 11) | ((g565) << 5) | (b565)
+            # print(f'rgb565: {r565} {g565} {b565} #{hex(rgb565)}')
+            # Pack into RGB565, rrrrrggggggbbbbb
+            target = ((target[::,::,2] >> 3 ) << 11 | (target[::,::,1] >> 2 ) << 5 | (target[::,::,0] >> 3 )).astype(numpy.dtype('>u2'))
+
         else:
             # Pack into 8bit, uint32, 0b00000000bbbbbbbbggggggggrrrrrrrr
             target = numpy.clip(target, 0, 255).astype(numpy.uint8)
 
         target = numpy.rot90(target, self.rotate).tobytes()
+        #print(f'{target[0]} {target[1]} {target[2]} {target[3]}')
 
         if self._thread is not None:
             # This is thread safe, since we're replacing the old buffer with a new one

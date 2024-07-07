@@ -33,6 +33,7 @@
 #include "hardware/structs/rosc.h"
 #include "hardware/watchdog.h"
 #include "pico/timeout_helper.h"
+#include "pico/multicore.h"
 
 #include "bsp/board.h"
 #include "tusb.h"
@@ -47,6 +48,8 @@ using namespace pimoroni;
 
 const size_t COMMAND_LEN = 4;
 uint8_t command_buffer[COMMAND_LEN];
+uint8_t command_frame_buffer[display::BUFFER_SIZE];
+uint8_t display_frame_buffer[display::BUFFER_SIZE];
 std::string_view command((const char *)command_buffer, COMMAND_LEN);
 
 //uint16_t audio_buffer[22050] = {0};
@@ -101,13 +104,13 @@ uint8_t cdc_get_data_uint8() {
     return len;
 }
 
-int main(void) {
-    board_init(); // Wtf?
-    usb_serial_init(); // ??
-    //cdc_uart_init(); // From cdc_uart.c
-    tusb_init(); // Tiny USB?
-
-    display::init();
+/**
+ * Core 0 is responsible for communication and receiving frame data.
+ * 
+ * Frames are retrieved, and stored in a buffer for the display thread to use.
+ * 
+ */
+int core_0_main(void) {
 
     while (1) {
         tud_task();
@@ -123,8 +126,13 @@ int main(void) {
         }
 
         if(command == "data") {
-            if (cdc_get_bytes(display::buffer, display::BUFFER_SIZE) == display::BUFFER_SIZE) {
-                display::update();
+
+            //TODO: Mutex around the display_frame_buffer
+
+            if (cdc_get_bytes(command_frame_buffer, display::BUFFER_SIZE) == display::BUFFER_SIZE) {
+                //Nothing to do, the other core's loop will copy the command buffer to the display buffer
+                memcpy(display_frame_buffer, command_frame_buffer, display::BUFFER_SIZE);
+                
             }
             continue;
         }
@@ -172,6 +180,83 @@ int main(void) {
             continue;
         }
     }
+}
+
+// /**
+//  * Converts a buffer of rgb888 pixels into a buffer of rgb565 pixels
+//  */
+// void frame_rgb888_to_rgb565(uint8_t * frame_rgb565, uint8_t * frame_rgb888){
+//     uint32_t rgb888_i = 0;
+//     uint32_t rgb565_i = 0;
+    
+//     while(rgb888_i < display::BUFFER_SIZE){
+//         uint8_t r = frame_rgb888[rgb888_i++];
+//         uint8_t g = frame_rgb888[rgb888_i++];
+//         uint8_t b = frame_rgb888[rgb888_i++];
+//         rgb888_i++;
+
+//         frame_rgb565[rgb565_i++] = (r & 0xF8) | (g >> 5); // Take 5 bits of Red component and 3 bits of G component
+//         frame_rgb565[rgb565_i++] = ((g & 0x1C) << 3) | (b  >> 3); // Take remaining 3 Bits of G component and 5 bits of Blue component
+
+//     }
+// }
+
+// /**
+//  * Converts a buffer of rgb565 pixels into a buffer of rgb888 pixels
+//  */
+// void frame_rgb565_to_rgb888(uint8_t * frame_rgb565, uint8_t * frame_rgb888){
+//     uint32_t rgb888_i = 0;
+//     uint32_t rgb565_i = 0;
+    
+//     while(rgb888_i < display::BUFFER_SIZE){
+
+
+//         /*
+//         * 0brrrrrggggggbbbbb
+//         */
+//         uint8_t r5 = frame_rgb565[rgb565_i] & 0xF8; // 11111000 00000000
+//         uint8_t g6 = ((frame_rgb565[rgb565_i] & 0x07) << 3) + (frame_rgb565[rgb565_i+1] & 0xE0);      // 00000111 11100000
+//         uint8_t b5 = (frame_rgb565[rgb565_i+1] & 0x1F) << 3;      // 00000000 00011111
+
+//         rgb565_i+=2;
+
+//         /**
+//          * 0b00rrrrrrrrrrggggggggggbbbbbbbbbb
+//          */
+//         uint32_t rgb10bit = r5 << 25 | g6 << 14 | b5 << 5;
+
+//         frame_rgb888[rgb888_i++] = (rgb10bit >> 24) & 0xFF;
+//         frame_rgb888[rgb888_i++] = (rgb10bit >> 16) & 0xFF;
+//         frame_rgb888[rgb888_i++] = (rgb10bit >> 8) & 0xFF;
+//         frame_rgb888[rgb888_i++] = rgb10bit & 0xFF;
+//     }
+// }
+
+/**
+ * This main loop is responsible for updating the display. It takes video frames and updates the display.
+ */
+void core_1_main(){
+    while (1) {
+        //Lets not copy the new frame data in until we read all of it from USB, since it's DMA'd
+        memcpy(display::buffer, display_frame_buffer, display::BUFFER_SIZE);
+
+        //TODO: Handle RGB565 to RGB888 conversion
+        // frame_rgb565_to_rgb888(display_frame_rgb565, display_frame_buffer);
+
+        display::update();
+    }
+}
+
+int main(void) {
+    board_init(); // Wtf?
+    usb_serial_init(); // ??
+    //cdc_uart_init(); // From cdc_uart.c
+    tusb_init(); // Tiny USB?
+
+    display::init();
+
+    multicore_launch_core1(core_1_main);
+    core_0_main();
 
     return 0;
 }

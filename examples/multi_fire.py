@@ -3,11 +3,28 @@ import time
 import random
 import sys
 from multiverse import Multiverse, Display, MODE_HUB75
+import logging
+import sys
+
+DEBUG = False
+
+root = logging.getLogger()
+if DEBUG:
+    root.setLevel(logging.DEBUG)
+else:
+    root.setLevel(logging.INFO)
+
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+root.handlers.clear()
+root.addHandler(handler)
 
 display = Multiverse(
-    Display("/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614104031C5E38-if00", 192, 32, 0, 0, mode=MODE_HUB75),
-    Display("/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614864D3853334-if00", 32, 32, 32, 32)
+    Display("/dev/serial/by-id/usb-Pimoroni_Multiverse_E661410403177438-if00", 160, 32, 0, 0, mode=MODE_HUB75),
 )
+
 
 display.setup(use_threads=True)
 
@@ -19,8 +36,8 @@ if len(sys.argv) == 2:
     sys.exit(0)
 
 # Full buffer size
-WIDTH = 224
-HEIGHT = 68
+WIDTH = 160
+HEIGHT = 32
 BYTES_PER_PIXEL = 4
 
 # Fire stuff
@@ -87,6 +104,8 @@ while True:
     buf = heat.clip(0.0, 1.0) * 4
     buf = buf.astype(numpy.uint8)
     buf = PALETTE[buf]
+
+    #buf[:] = [0, 0, 255, 0]
 
     # Update the displays from the buffer
     display.update(buf)
