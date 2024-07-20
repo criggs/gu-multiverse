@@ -21,16 +21,34 @@ handler.setFormatter(formatter)
 root.handlers.clear()
 root.addHandler(handler)
 
-display = Multiverse(
-    Display("/dev/serial/by-id/usb-Pimoroni_Multiverse_E661410403177438-if00", 160, 32, 0, 0, mode=MODE_HUB75),
-    Display("/dev/serial/by-id/dummy", 256, 32, 0, 32 * 1, dummy=True, mode=MODE_HUB75),
-    Display("/dev/serial/by-id/dummy", 256, 32, 0, 32 * 2, dummy=True, mode=MODE_HUB75),
-    Display("/dev/serial/by-id/dummy", 256, 32, 0, 32 * 3, dummy=True, mode=MODE_HUB75),
-    Display("/dev/serial/by-id/dummy", 256, 32, 0, 32 * 4, dummy=True, mode=MODE_HUB75),
-    Display("/dev/serial/by-id/dummy", 256, 32, 0, 32 * 5, dummy=True, mode=MODE_HUB75),
-    Display("/dev/serial/by-id/dummy", 256, 32, 0, 32 * 6, dummy=True, mode=MODE_HUB75),
-    Display("/dev/serial/by-id/dummy", 256, 32, 0, 32 * 7, dummy=True, mode=MODE_HUB75),
-)
+#Chris's test displays
+# display_ids = [
+#     "usb-Pimoroni_Multiverse_E661410403177438-if00",
+#     "usb-Pimoroni_Multiverse_E660C0D1C70C8F39-if00",
+#     "usb-Pimoroni_Multiverse_E6614104035FC222-if00",
+#     "usb-Pimoroni_Multiverse_E661410403529522-if00",
+#     "usb-Pimoroni_Multiverse_E6614104034BB822-if00",
+#     "usb-Pimoroni_Multiverse_E6614104033B8122-if00",
+#     "usb-Pimoroni_Multiverse_E661410403762728-if00",
+#     "usb-Pimoroni_Multiverse_E6614104035E8322-if00"
+# ]
+# displays = [ Display(f"/dev/serial/by-id/{id}", 160, 32, 0,   i * 32, mode=MODE_HUB75) for i, id in enumerate(display_ids) ]
+
+#Museum displays
+display_ids = [
+    "usb-Pimoroni_Multiverse_E661410403314736-if00",
+    "usb-Pimoroni_Multiverse_E6614104036F7A38-if00",
+	"usb-Pimoroni_Multiverse_E661410403677138-if00",
+	"usb-Pimoroni_Multiverse_E6614104031E9832-if00",
+	"usb-Pimoroni_Multiverse_E6614104034EB634-if00",
+	"usb-Pimoroni_Multiverse_E6614104032F5032-if00",
+	"usb-Pimoroni_Multiverse_E661410403916D38-if00",
+	"usb-Pimoroni_Multiverse_E661410403798632-if00"
+]
+displays = [ Display(f"/dev/serial/by-id/{id}", 256, 32, 0,   i * 32, mode=MODE_HUB75) for i, id in enumerate(display_ids) ]
+
+
+display = Multiverse(*displays)
 
 display.setup(use_threads=True)
 

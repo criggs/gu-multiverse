@@ -34,6 +34,7 @@
 #include "hardware/watchdog.h"
 #include "pico/timeout_helper.h"
 #include "pico/multicore.h"
+#include "pico/mutex.h"
 
 #include "bsp/board.h"
 #include "tusb.h"
@@ -51,6 +52,34 @@ uint8_t command_buffer[COMMAND_LEN];
 uint8_t command_frame_buffer[display::BUFFER_SIZE];
 uint8_t display_frame_buffer[display::BUFFER_SIZE];
 std::string_view command((const char *)command_buffer, COMMAND_LEN);
+
+
+
+////////////
+
+bool has_frame = false;
+auto_init_mutex(has_frame_mutex);
+
+void signal_has_new_frame(){
+    mutex_enter_blocking(&has_frame_mutex);
+    has_frame = true;
+    mutex_exit(&has_frame_mutex);
+}
+
+bool has_new_frame(){
+    bool result = false;
+    mutex_enter_blocking(&has_frame_mutex);
+    if(has_frame){
+        //Reset the flag
+        has_frame = false;
+        result = true;
+    }
+    mutex_exit(&has_frame_mutex);
+    return result;
+}
+
+///////////
+
 
 //uint16_t audio_buffer[22050] = {0};
 
@@ -111,7 +140,7 @@ uint8_t cdc_get_data_uint8() {
  * 
  */
 int core_0_main(void) {
-
+    printf("Starting Core 0 main loop\n");   
     while (1) {
         tud_task();
 
@@ -129,10 +158,9 @@ int core_0_main(void) {
 
             //TODO: Mutex around the display_frame_buffer
 
-            if (cdc_get_bytes(command_frame_buffer, display::BUFFER_SIZE) == display::BUFFER_SIZE) {
+            if (cdc_get_bytes(display_frame_buffer, display::BUFFER_SIZE) == display::BUFFER_SIZE) {
                 //Nothing to do, the other core's loop will copy the command buffer to the display buffer
-                memcpy(display_frame_buffer, command_frame_buffer, display::BUFFER_SIZE);
-                
+                signal_has_new_frame();
             }
             continue;
         }
@@ -236,18 +264,23 @@ int core_0_main(void) {
  * This main loop is responsible for updating the display. It takes video frames and updates the display.
  */
 void core_1_main(){
+    printf("Starting Core 1 main loop\n");   
     while (1) {
-        //Lets not copy the new frame data in until we read all of it from USB, since it's DMA'd
-        memcpy(display::buffer, display_frame_buffer, display::BUFFER_SIZE);
+        if(has_new_frame()){
+            //Lets not copy the new frame data in until we read all of it from USB, since it's DMA'd
+            memcpy(display::buffer, display_frame_buffer, display::BUFFER_SIZE);
 
-        //TODO: Handle RGB565 to RGB888 conversion
-        // frame_rgb565_to_rgb888(display_frame_rgb565, display_frame_buffer);
+            //TODO: Handle RGB565 to RGB888 conversion
+            // frame_rgb565_to_rgb888(display_frame_rgb565, display_frame_buffer);
 
-        display::update();
+            display::update();
+        }
     }
 }
 
 int main(void) {
+    stdio_init_all();
+
     board_init(); // Wtf?
     usb_serial_init(); // ??
     //cdc_uart_init(); // From cdc_uart.c

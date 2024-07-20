@@ -112,7 +112,7 @@ class Display:
         self._frame_count += 1
         if self._frame_count % 100 == 0:
             frame_time = time.time() - start
-            print(f"Frame time: {frame_time * 1000}ms, FPS: {1/frame_time}")
+            print(f"[{self.x} {self.y}] {self.path}: Frame Write Time: {frame_time * 1000}ms, FPS: {1/frame_time}")
 
     def write(self, header, data=None):
         if self.port is None:

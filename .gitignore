@@ -4,3 +4,4 @@ __pycache__/
 lib/dist
 lib/build
 *.egg-info
+*.swp
