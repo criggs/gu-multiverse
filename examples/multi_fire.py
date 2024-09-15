@@ -60,8 +60,8 @@ if len(sys.argv) == 2:
     sys.exit(0)
 
 # Full buffer size
-WIDTH = 160
-HEIGHT = 32
+WIDTH = 256
+HEIGHT = 256
 BYTES_PER_PIXEL = 4
 
 # Fire stuff

@@ -45,7 +45,20 @@ display_ids = [
 	"usb-Pimoroni_Multiverse_E661410403916D38-if00",
 	"usb-Pimoroni_Multiverse_E661410403798632-if00"
 ]
-displays = [ Display(f"/dev/serial/by-id/{id}", 256, 32, 0,   i * 32, mode=MODE_HUB75) for i, id in enumerate(display_ids) ]
+
+display_ids_2 = [
+    "usb-Pimoroni_Multiverse_E6617C93E3145428-if00",
+    "usb-Pimoroni_Multiverse_E6617C93E3157928-if00",
+    "usb-Pimoroni_Multiverse_E6617C93E31D8E2A-if00",
+    "usb-Pimoroni_Multiverse_E6617C93E329452A-if00",
+    "usb-Pimoroni_Multiverse_E6617C93E3548529-if00",
+    "usb-Pimoroni_Multiverse_E6617C93E376A72A-if00",
+    "usb-Pimoroni_Multiverse_E6617C93E3803E28-if00"
+]
+
+#displays = [ Display(f"/dev/serial/by-id/{id}", 128, 32, 0,   i * 32, mode=MODE_HUB75) for i, id in enumerate(display_ids) ]
+
+displays = [ Display(f"/dev/serial/by-id/{id}", 128, 32, 0,   i * 32, mode=MODE_HUB75) for i, id in enumerate(display_ids_2) ]
 
 
 display = Multiverse(*displays)
@@ -53,7 +66,7 @@ display = Multiverse(*displays)
 display.setup()
 
 # Full buffer size
-WIDTH = 160
+WIDTH = 256
 HEIGHT = 32 * 8
 BYTES_PER_PIXEL = 4
 

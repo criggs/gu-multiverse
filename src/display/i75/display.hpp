@@ -7,7 +7,7 @@ namespace pimoroni {
 }
 
 namespace display {
-    const int WIDTH = 160;
+    const int WIDTH = 128;
     const int HEIGHT = 32;
 
     const int BUFFER_SIZE = WIDTH * HEIGHT * 2;
