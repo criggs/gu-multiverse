@@ -232,7 +232,7 @@ class Display:
             # rgb565 = ((r565) << 11) | ((g565) << 5) | (b565)
             # print(f'rgb565: {r565} {g565} {b565} #{hex(rgb565)}')
             # Pack into RGB565, rrrrrggggggbbbbb
-            target = ((target[::,::,2] >> 3 ) << 11 | (target[::,::,1] >> 2 ) << 5 | (target[::,::,0] >> 3 )).astype(numpy.dtype('>u2'))
+            target = ((target[::,::,0] >> 3 ) << 11 | (target[::,::,1] >> 2 ) << 5 | (target[::,::,2] >> 3 )).astype(numpy.dtype('>u2'))
 
         else:
             # Pack into 8bit, uint32, 0b00000000bbbbbbbbggggggggrrrrrrrr

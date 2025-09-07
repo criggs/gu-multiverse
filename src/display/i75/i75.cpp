@@ -40,7 +40,7 @@ namespace display {
     void update() {
         
         //TODO: Add a compile flag or a runtime flag to enable this
-        draw_debug_info();
+        //draw_debug_info();
 
         hub75->update(&graphics);
         if((frames % 100) == 0){
